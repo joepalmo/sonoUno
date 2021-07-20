@@ -75,7 +75,9 @@ class core (gui.FrameDesign):
             'inverse_mf':self.inverse_command,
             'square_mf':self.square_command,
             'squareroot_mf':self.squareroot_command,
-            'logarithm_mf':self.logarithm_command
+            'logarithm_mf':self.logarithm_command,
+            'plotalldata':self.plotmultdata_sameplot,
+            'plot':self.plotmultdata_differentplot
             }
 
         self.command_dict_withparam = {
@@ -125,6 +127,8 @@ class core (gui.FrameDesign):
         self.inverseFunc = False
         self.cont = 0
         self.waitonloop = 500
+        self.multsound = False
+        self.multisound_cont = 1
 
         #Variables globales con set y get
         self.setXActual(np.array(None))
@@ -653,6 +657,7 @@ class core (gui.FrameDesign):
     def plot2D (self, x, y):
         #para graficar cambios con los datos originales
         self._expData.printoutput("Plot the graph.")
+        self.multsound = False
         try:
             if self._gridChoice.IsChecked():
                 self.panel.grid(color=self._getGridColor(), linestyle=self._getGridLinestyle(), linewidth=self._getGridLinewidth())
@@ -745,13 +750,99 @@ class core (gui.FrameDesign):
                 self.SendSizeEvent()
             except Exception as e:
                 self._expData.writeexception(e)
+                    
+    def plotmultdata_differentplot(self):
+        data = self.getDataFrame()
+        self.multsound = True
+        if data is not None:
+            self._expData.printoutput("Clean and plot the graph")
+            self._lineExist = False
+            self.panel.cla()
+            self._figure.canvas.draw()
+            self.panel.lines = []
+            #Se coloca a cero por el momento porque se eliminan las demas lineas
+            self._plotCounter = 0
+            #Chequear donde estaba el cursor y ver si habían marcas en los datos
+            self._setTimerIndex(0)
+            
+            if self._gridChoice.IsChecked():
+                self.panel.grid(color=self._getGridColor(), linestyle=self._getGridLinestyle(), linewidth=self._getGridLinewidth())
+            color = [' ', 'b', 'r', 'y', 'g', 'c', 'm', 'k']
+            
+            self.panel.remove()
+            
+            for i in range(1,data.shape[1]):
+                plotnumber = 310 + i
+                self.panel = self._figure.add_subplot(plotnumber)
+                self._lines = self.panel.plot(data.iloc[1:,0].astype(float), 
+                                                  data.iloc[1:,i].astype(float), 
+                                                  color[i],
+                                                  label=str(data.iloc[0,i]))
+                self._plotCounter = self._plotCounter + 1
+                # if i == 1:
+                #     yname = np.array([data.iloc[0,i]])
+                # else:
+                #     yname = np.append(yname, [data.iloc[0,i]])
+                #self.panel.legend( yname, loc='upper right')
+                if i == 1:    
+                    self.panel.set_title(self._titleEdDataTextCtrl.GetValue())
+                self.panel.set_xlabel(data.iloc[0,0])
+                self.panel.set_ylabel(data.iloc[0,i])
+
+            self._figure.tight_layout()
+            self._figure.canvas.draw()
+                
+            self.SendSizeEvent()
+        else:
+            self._expData.writeinfo("The data has not been imported yet.")
+            
+    def plotmultdata_sameplot(self):
+        data = self.getDataFrame()
+        self.multsound = True
+        if data is not None:
+            self._expData.printoutput("Clean and plot the graph")
+            self._lineExist = False
+            self.panel.cla()
+            self._figure.canvas.draw()
+            self.panel.lines = []
+            #Se coloca a cero por el momento porque se eliminan las demas lineas
+            self._plotCounter = 0
+            #Chequear donde estaba el cursor y ver si habían marcas en los datos
+            self._setTimerIndex(0)
+            
+            if self._gridChoice.IsChecked():
+                self.panel.grid(color=self._getGridColor(), linestyle=self._getGridLinestyle(), linewidth=self._getGridLinewidth())
+            color = [' ', 'b', 'r', 'y', 'g', 'c', 'm', 'k']
+            for i in range(1,data.shape[1]):
+                self._lines = self.panel.plot(data.iloc[1:,0].astype(float), 
+                                                  data.iloc[1:,i].astype(float), 
+                                                  color[i],
+                                                  label=str(data.iloc[0,i]))
+                self._plotCounter = self._plotCounter + 1
+                if i == 1:
+                    yname = np.array([data.iloc[0,i]])
+                else:
+                    yname = np.append(yname, [data.iloc[0,i]])
+            self.panel.legend( yname, loc='upper right')
+            self.panel.set_title(self._titleEdDataTextCtrl.GetValue())
+            self.panel.set_xlabel(data.iloc[0,0])
+
+            self._figure.tight_layout()
+            self._figure.canvas.draw()
+                
+            self.SendSizeEvent()
+        else:
+            self._expData.writeinfo("The data has not been imported yet.")
 
     def _sonoPlot (self, event):
         if self._timer.GetInterval()==self.waitonloop and self.playinloop_state:
             self._timer.Start((self._getVelocity()*2) + 10)
+        if self.multisound_cont == 3:
+            self._timer.Start((self._getVelocity()*2) + 10)
         if self.getXActual().any()==None or self.getYActual().any()==None:
             self._expData.writeinfo("The data has not been imported yet.")
         else:
+            data = self.getDataFrame()
             self._expData.printoutput("Generate the sound and refresh plot.")
             timerIndex = self._getTimerIndex()
             x=self.getXActual()
@@ -769,7 +860,49 @@ class core (gui.FrameDesign):
                 except Exception as e:
                     self._expData.writeexception(e)
                 try:
-                    self._dataSound.make_sound(self._getNormY(), timerIndex)
+                    if self.multsound:
+                        self._timer.Start(10)
+                        # Debo normalizar y sonorizar
+                        #Uso un if para reproducir en 3 ciclos diferentes y darle tiempo a los sonidos
+                        if self.multisound_cont == 1:
+                            # Primer columna
+                            self._dataSound.reproductor.set_waveform('sine')
+                            norm_x, norm_y, status = self._matFc.normalize(
+                                data.iloc[1:,0].astype(float).values, 
+                                data.iloc[1:,1].astype(float).values
+                                )
+                            print('************************1')
+                            print (norm_y[timerIndex])
+                            self._dataSound.make_sound(norm_y, timerIndex)
+                            self.multisound_cont = self.multisound_cont + 1
+                        elif self.multisound_cont == 2:
+                            # Segunda columna
+                            #Seteo otras config de sonido
+                            self._dataSound.reproductor.set_waveform('flute')
+                            norm_x, norm_y, status = self._matFc.normalize(
+                                data.iloc[1:,0].astype(float).values, 
+                                data.iloc[1:,2].astype(float).values
+                                )
+                            print('************************2')
+                            print (norm_y[timerIndex])
+                            self._dataSound.make_sound(norm_y, timerIndex)
+                            self.multisound_cont = self.multisound_cont + 1
+                        elif self.multisound_cont == 3:
+                            # Tercer columna
+                            #Seteo otras config de sonido
+                            self._dataSound.reproductor.set_waveform('pipe organ')
+                            norm_x, norm_y, status = self._matFc.normalize(
+                                data.iloc[1:,0].astype(float).values, 
+                                data.iloc[1:,3].astype(float).values
+                                )
+                            print('************************3')
+                            print (norm_y[timerIndex])
+                            self._dataSound.make_sound(norm_y, timerIndex)
+                            self.multisound_cont = 1
+                    else:
+                        print('************************__')
+                        print (self._getNormY()[timerIndex])
+                        self._dataSound.make_sound(self._getNormY(), timerIndex)
                 except Exception as e:
                     self._expData.writeexception(e)
             try:
@@ -777,8 +910,8 @@ class core (gui.FrameDesign):
                 self._absposlabel_textctrl.SetValue(str(round(x[self._abspos_slider.GetValue()],4)))
             except Exception as e:
                 self._expData.writeexception(e)
-                
-            self._setTimerIndex(timerIndex + 1)
+            if self.multisound_cont == 1:
+                self._setTimerIndex(timerIndex + 1)
             if timerIndex==(x.size-1):
                 if self.playinloop_state:
                     self._tickmark.loop()

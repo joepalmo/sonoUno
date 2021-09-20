@@ -37,6 +37,7 @@ class reproductorRaw (object):
         self._last_freq = 0
         self._last_time = 0
 
+        # change this line to change the sound of each point
         self.set_adsr(0.01,0.15,25,0.5)
         self.set_time_base(time_base)
         self.set_discrete()
@@ -224,16 +225,29 @@ class reproductorRaw (object):
         return env
 
     #Es el método encargado de generar las notas y reproducirlas
-    def pitch (self, value, cont):
+    def pitch (self, value, cont, inverse=False):
         if self.logscale:
             value = np.log10(100*value+1)/2 #This is to achieve reasoable values
-            print(value)
+            # FREQ AND VOLUME
+            # also normalize the x-value - with max and min of wavelength scale
+            #cont = np.log10(100*cont+1)/2
         if self.mapping == 'frequency':
-            freq = self.max_freq*value+self.min_freq
+            #where the frequency is set based on value
+            if inverse == False:
+                freq = self.max_freq*value+self.min_freq
+            elif inverse == True:
+                # INVERSE SOUND #
+                # for inverse (i.e. magnitude scale): 
+                freq = self.max_freq*(1-value)+self.min_freq
+            else:
+                freq = self.max_freq*value+self.min_freq
+
             vol = self.volume
         else:
             vol = self.max_volume*value+self.min_volume
-            freq = self.fixed_freq
+            #freq = self.fixed_freq
+            # change frequency based on the X
+            freq = self.max_freq*cont+self.min_freq
         self.env = self._adsr_envelope()
         f = self.env*vol*2**14*self.generate_waveform(freq)
         self.sound = pygame.mixer.Sound(f.astype('int16'))
@@ -248,13 +262,13 @@ class simpleSound(object):
         #Se instancia la clase que se genera el sonido usando PyGame.
         self.reproductor = reproductorRaw()
     #Éste método modifica el valor para producir la nota y lo envía a la clase reproductorMidi
-    def make_sound(self, data, x):
+    def make_sound(self, data, x, inverse=False):
         try:
             if not (x == -1):
                 #Aquí se llama al método que genera y envía la nota a fluidsynth
-                self.reproductor.pitch(data[x], x)
+                self.reproductor.pitch(data[x], x, inverse)
             else:
-                self.reproductor.pitch(0, 0, x)
+                self.reproductor.pitch(0, 0, x, inverse)
         except Exception as e:
             self.expErrSs.writeexception(e)
         #En un futuro se puede pedir confirmación al método pitch y devolverla.

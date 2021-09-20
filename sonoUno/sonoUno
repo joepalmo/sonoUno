@@ -25,6 +25,11 @@ from sound_module.simple_sound import tickMark
 from data_export.data_export import DataExport
 from data_transform.predef_math_functions import PredefMathFunctions
 
+# FINISHING SOUND #
+#import these to make the finishing sound
+from pygame import mixer
+import time
+
 class core (gui.FrameDesign):
     def __init__(self):
         #clase de la cual hereda
@@ -148,8 +153,15 @@ class core (gui.FrameDesign):
         self._setavNPoints(1)
         self._setMarkerStyleIndex(22)
         self._setLineChar('')
-        self._setMarkerChar('')
-        self._setColorChar('b')
+        # DEFAULTS #
+
+        #set default mode
+        self._setMode('')
+
+        #automatically set to discrete points
+        self._setMarkerChar('o')
+        #automatically set to better default color
+        self._setColorChar('darkturquoise')
         self._set_soundwaveformlist()
         self._set_waveformnumber(1)
         self._swaveformlistbox.InsertItems(self._get_soundwaveformlist(), 0)
@@ -166,6 +178,7 @@ class core (gui.FrameDesign):
         self._setDataFrame(None)
 
         self.originaldataselected = True
+        self.removeNans = False
 
         #Setting special sound config
         adrs = self._dataSound.reproductor.get_adsr()
@@ -211,7 +224,8 @@ class core (gui.FrameDesign):
         self._expData.printoutput("Setting class variables norm_x and norm_y.")
         self._norm_x = x
         self._norm_y = y
-        #self._norm_x, self._norm_y, status = self._matFc.normalize(x, y)
+        #do normalization
+        self._norm_x, self._norm_y, status = self._matFc.normalize(x, y)
 
     def _setTimerIndex (self, index):
         self._expData.printoutput("Setting class variable timerIndex.")
@@ -259,6 +273,12 @@ class core (gui.FrameDesign):
     def _setMarkerStyleIndex (self, index):
         self._expData.printoutput("Setting class variable markerStyleIndex.")
         self._markerStyleIndex = index
+
+
+    # Mode setter
+    def _setMode (self, mode):
+        self._expData.printoutput("Setting application data mode.")
+        self._mode = mode
 
     def _setLineChar (self, char):
         self._expData.printoutput("Setting class variable lineChar.")
@@ -453,6 +473,11 @@ class core (gui.FrameDesign):
         self._expData.printoutput("Class variable markerStyleIndex requested.")
         return self._markerStyleIndex
 
+    # Mode getter
+    def _getMode (self):
+        self._expData.printoutput("Class variable mode requested.")
+        return self._mode
+
     def _getLineChar (self):
         self._expData.printoutput("Class variable lineChar requested.")
         return self._lineChar
@@ -467,7 +492,13 @@ class core (gui.FrameDesign):
 
     def _getPlotStile (self):
         self._expData.printoutput("Graphic style requested.")
-        return (self._getColorChar() + self._getMarkerChar() + self._getLineChar())
+        #kwargs style
+        style = {
+            "color": self._getColorChar(),
+            "marker": self._getMarkerChar(),
+            "linestyle": self._getLineChar()
+            }
+        return style
 
     def get_soundvolumn(self):
         return self._soundvolumn
@@ -659,9 +690,34 @@ class core (gui.FrameDesign):
         except Exception as e:
             self._expData.writeexception(e)
         try:
-            style = self._getPlotStile()
-            self._lines = self.panel.plot(x, y, style)
-            self._plotCounter = self._plotCounter + 1
+            if self._getMode() is 'spectra':
+                # COLORING #
+                # COLOR FOR WAVELENGTH PURPOSES
+                import matplotlib.pyplot as plt
+                from matplotlib.collections import LineCollection
+                from matplotlib.colors import ListedColormap, BoundaryNorm
+                points = np.array([x, y]).T.reshape(-1, 1, 2)
+                segments = np.concatenate([points[:-1], points[1:]], axis=1)
+                # Create a continuous norm to map from data points to colors
+                norm = plt.Normalize(x.min(), x.max())
+                lc = LineCollection(segments, cmap='rainbow', norm=norm)
+                lc.set_array(x)
+                self._lines = self.panel.add_collection(lc)
+                #wavelength
+                self._lines = self.panel.plot(lc)
+                self._plotCounter = self._plotCounter + 1
+            elif self._getMode() is 'LC':
+                # # COLOR FOR DISCRETE PURPOSES
+                # self._lines = self.panel.scatter(x,y, c=y, cmap='hot_r',)
+                # self._lines = self.panel.plot(None)
+                style = self._getPlotStile()
+                self._lines = self.panel.plot(x,y, **style)
+                self._plotCounter = self._plotCounter + 1
+            else:
+                style = self._getPlotStile()
+                self._lines = self.panel.plot(x,y, **style)
+                self._plotCounter = self._plotCounter + 1
+
         except Exception as e:
             self._expData.writeexception(e)
 
@@ -720,7 +776,8 @@ class core (gui.FrameDesign):
             try:
                 timerIndex = self._getTimerIndex()
                 if not timerIndex==0: 
-                    if np.isnan(x[timerIndex]) or np.isnan(y[timerIndex]):
+                    # NAN GAPS #
+                    if (np.isnan(x[timerIndex]) or np.isnan(y[timerIndex])) and self.removeNans:
                         self._expData.writeinfo("This point is a nan value, for that the red line is not updated.")
                     else:
                         ordenada = np.array([float(np.nanmin(y)), float(np.nanmax(y))])
@@ -756,22 +813,22 @@ class core (gui.FrameDesign):
             timerIndex = self._getTimerIndex()
             x=self.getXActual()
             y=self.getYActual()
-            if np.isnan(x[timerIndex]) or np.isnan(y[timerIndex]):
-                self._expData.writeinfo("This point is a nan value, for that the red line and sound is not updated.")
-            else:
-                try:
-                    ordenada = np.array([float(np.nanmin(y)), float(np.nanmax(y))])
-                    abscisa = np.array([float(x[timerIndex]), float(x[timerIndex])])
-                except Exception as e:
-                    self._expData.writeexception(e)
-                try:
-                    self.plotRedLine(abscisa, ordenada)
-                except Exception as e:
-                    self._expData.writeexception(e)
-                try:
-                    self._dataSound.make_sound(self._getNormY(), timerIndex)
-                except Exception as e:
-                    self._expData.writeexception(e)
+            # if np.isnan(x[timerIndex]) or np.isnan(y[timerIndex]):
+            #     self._expData.writeinfo("This point is a nan value, for that the red line and sound is not updated.")
+            # else:
+            try:
+                ordenada = np.array([float(np.nanmin(y)), float(np.nanmax(y))])
+                abscisa = np.array([float(x[timerIndex]), float(x[timerIndex])])
+            except Exception as e:
+                self._expData.writeexception(e)
+            try:
+                self.plotRedLine(abscisa, ordenada)
+            except Exception as e:
+                self._expData.writeexception(e)
+            try:
+                self._dataSound.make_sound(self._getNormY(), timerIndex, inverse=self.inverseFunc)
+            except Exception as e:
+                self._expData.writeexception(e)
             try:
                 self._abspos_slider.SetValue(timerIndex)
                 self._absposlabel_textctrl.SetValue(str(round(x[self._abspos_slider.GetValue()],4)))
@@ -787,6 +844,13 @@ class core (gui.FrameDesign):
                     self._abspos_slider.SetValue(0)
                     self._absposlabel_textctrl.SetValue(str(round(self.getXActual()[self._abspos_slider.GetValue()],4)))
                 else:
+                    # FINISHING SOUND #
+                    # Pause for just half a second
+                    time.sleep(0.5)
+                    # Play a special sound at end here!
+                    mixer.init() #you must initialize the mixer
+                    alert=mixer.Sound('sound_module/sounds/alto_gong.wav')
+                    alert.play()
                     self.stopMethod()
                 
     def _playenvelope_event(self, event):
@@ -794,7 +858,7 @@ class core (gui.FrameDesign):
         env = self.getenvelope()
         n_samples = np.arange(0.0, env.size)
         norm_x, norm_y, status = self._matFc.normalize(n_samples, env)
-        self._dataSound.make_sound(norm_y, timerIndex)
+        self._dataSound.make_sound(norm_y, timerIndex, inverse=self.inverseFunc)
         self._settimerenvelopeindex(timerIndex + 1)
         if timerIndex==(env.size-1):
             self._envelopeplaytogglebtn.SetLabel('Play envelope\nsound')
@@ -1038,8 +1102,9 @@ class core (gui.FrameDesign):
             delNum=False
             try:
                 for i in range (0, xnumpy.size):
+                    # NAN GAPS #
                     #if xnumpy[i] == nan or ynumpy[i] == nan:
-                    if math.isnan(xnumpy[i]) or math.isnan(ynumpy[i]):
+                    if (math.isnan(xnumpy[i]) or math.isnan(ynumpy[i])) and self.removeNans:
                         self.del_xy = np.append(self.del_xy, i)
                         delNum=True
             except Exception as e:
@@ -1056,6 +1121,7 @@ class core (gui.FrameDesign):
                     wx.MessageBox(text,
                                   'Information', wx.OK | wx.ICON_INFORMATION)
                     delNum=False
+                    # NAN GAPS #
                     xnumpy=np.delete(xnumpy, self.del_xy)
                     ynumpy=np.delete(ynumpy, self.del_xy)
             except Exception as e:
@@ -1083,7 +1149,7 @@ class core (gui.FrameDesign):
             try:
                 for i in range (0, xnumpy.size):
                     #if xnumpy[i] == nan or ynumpy[i] == nan:
-                    if math.isnan(xnumpy[i]):
+                    if math.isnan(xnumpy[i]) and self.removeNans:
                         self.del_xy = np.append(self.del_xy, i)
                         delNum=True
             except Exception as e:
@@ -1100,6 +1166,7 @@ class core (gui.FrameDesign):
                     #wx.MessageBox(text,
                      #             'Info', wx.OK | wx.ICON_INFORMATION)
                     delNum=False
+                    # NAN GAPS #
                     xnumpy=np.delete(xnumpy, self.del_xy)
             except Exception as e:
                 self._expData.writeexception(e)
@@ -1178,6 +1245,24 @@ class core (gui.FrameDesign):
         else:
             x = self.getXActual()
             y = self.getYActual()
+
+
+            self.del_xy = np.array([0,1])
+            index1 = [i for i in range(0, len(self.del_xy))]
+            if not self.del_xy.size==0:
+                self.del_xy=np.delete(self.del_xy,index1)
+
+            try:
+                for i in range (0, x.size):
+                    # NAN GAPS #
+                    if self.removeNans == True:
+                        if math.isnan(x[i]) or math.isnan(y[i]):
+                            self.del_xy = np.append(self.del_xy, i)
+            except Exception as e:
+                self._expData.writeexception(e)
+
+            x=np.delete(x, self.del_xy)
+            y=np.delete(y, self.del_xy)
 
             # if self.limitDataToLoad < x.shape[0]:
             #     if wx.MessageBox("The data file have more than 5000 values, the software might delay to show all the data array on a grid element. Do you want to display all the values on the grid element anyway?\n\nNOTE: The other functionalities (plot, math fuctions, etc) use all the values of the array in any case.", "Information", wx.ICON_QUESTION | wx.YES_NO, self) == wx.NO:
@@ -1585,8 +1670,9 @@ class core (gui.FrameDesign):
     def absPosSetting (self):
         if self.getXActual().any()==None or self.getYActual().any()==None:
             self._expData.writeinfo("The data has not been imported yet.")
-        elif np.isnan(self.getXActual()[self._abspos_slider.GetValue()]) or np.isnan(self.getYActual()[self._abspos_slider.GetValue()]):
-            self._expData.writeinfo("This point is a nan value, for that the red line is not updated.")
+        # NAN GAPS #
+        # elif np.isnan(self.getXActual()[self._abspos_slider.GetValue()]) or np.isnan(self.getYActual()[self._abspos_slider.GetValue()]):
+        #     self._expData.writeinfo("This point is a nan value, for that the red line is not updated.")
         else:
             #Set the red line to mark de points in the graph
             x = self.getXActual()
@@ -2923,6 +3009,31 @@ class core (gui.FrameDesign):
         message = "SonoUno is a Sonification Software for astronomical data in two column files. \n\nThis software is being developed by Bioing. Johanna Casado on her PhD tesis framework, under direction of Dr. Beatriz García. With general collaboration of Dr. Wanda Diaz Merced, and the collaboration on software development of Aldana Palma, Bioing. Julieta Carricondo Robino and Mg. Ing. Gonzalo A. de la Vega.\n\nThe email contact of the SonoUno team is: sonounoteam@gmail.com"
         wx.MessageBox(message, 'Information', wx.OK | wx.ICON_INFORMATION)
 
+    def _eventspectra(self, event):
+        if self._LCmenuitem.IsChecked():
+            self._LCmenuitem.Check(False)
+        self._setMode('spectra')
+
+        # do not invert y-axis
+        self.inverseFunc = False
+
+        #replot things with new mode
+        self.replot2D(self.getXActual(), self.getYActual())
+        self._figure.canvas.draw()
+    
+    def _eventLC(self, event):
+        #self._setMatSelection('Inverse')
+        if self._spectramenuitem.IsChecked():
+            self._spectramenuitem.Check(False)
+        self._setMode('LC')
+
+        # invert y-axis
+        self.inverseFunc = True
+
+        #replot things with new mode
+        self.replot2D(self.getXActual(), self.getYActual())
+        self._figure.canvas.draw()
+
     def _eventmanual( self, event ):
         # message = "The user manual of the software is located in the software root folder in PDF format, or in the next link (copy and paste on the browser): \n"
         # url = "https://drive.google.com/file/d/1RtI1bG5Q-PjpT3LBcmWJfW88YfbqCCg1/view?usp=sharing"
@@ -2984,9 +3095,18 @@ class core (gui.FrameDesign):
 
     def _eventOriginalGrid( self, event ):
         self._expData.printoutput("Original Array button of the grid is pressed.")
+        self.removeNans = False
         self.originaldataselected = True
         self._setdatagridpage(self._datagridslider.GetValue())
-        # self.dataGridOriginal()
+        self.dataGridOriginal()
+        self.x, self.y, _ = self.dataSelection(self._dataFrame)
+
+    def _eventRemoveNans( self, event ):
+        self._expData.printoutput("Remove NaNs button of the grid is pressed.")
+        self.originaldataselected = False
+        self.removeNans = True
+        self.dataGridUpdate()
+        self.x, self.y, _ = self.dataSelection(self._dataFrame)
 
     def _eventAxisChoiceX( self, event ):
         self._expData.printoutput("A new choice on the X axis is selected.")

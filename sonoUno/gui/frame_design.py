@@ -1125,6 +1125,49 @@ class FrameDesign( wx.Frame ):
             menu = self._menusettings,
             title = 'Settings'
             )
+
+        # Create Mode menu
+        self._menumode = wx.Menu()
+        # create spectra menu item
+        self._spectramenuitem = wx.MenuItem(
+            parentMenu = self._menumode,
+            id = wx.ID_ANY,
+            text = ('Spectra'),
+            helpString = ('Switch to spectra mode'),
+            kind = wx.ITEM_CHECK
+            )
+        # Append spectra menu item to mode menu
+        self._menumode.Append(self._spectramenuitem,)
+        self.Bind(
+            event = wx.EVT_MENU,
+            handler = self._eventspectra,        #################CHANGE THIS EVENT
+            id = self._spectramenuitem.GetId()
+            )    
+
+        # create LC menu item
+        self._LCmenuitem = wx.MenuItem(
+            parentMenu = self._menumode,
+            id = wx.ID_ANY,
+            text = ('Lightcurve'),
+            helpString = ('Switch to lightcurve mode'),
+            kind = wx.ITEM_CHECK
+            )
+        # Append lightcurve menu item to mode menu
+        self._menumode.Append(self._LCmenuitem,)    
+        self.Bind(
+            event = wx.EVT_MENU,
+            handler = self._eventLC,        #################CHANGE THIS EVENT
+            id = self._LCmenuitem.GetId()
+            ) 
+
+        # Append mode menu to menu bar
+        self._menubar.Append(
+            menu = self._menumode,
+            title = 'Mode'
+            )
+
+
+
         # Create help menu
         self._menuhelp = wx.Menu()
         # Create about menu item and append it to help menu
@@ -3217,24 +3260,29 @@ class FrameDesign( wx.Frame ):
         _openButFgSizer.Add(_gridboxfgsizer, 0, wx.EXPAND | wx.ALL, 5)
 
         #Crea el sizer para los botones de la grilla
-        _buttonsDataFgSizer = wx.FlexGridSizer( 1, 3, 0, 0 )
+        _buttonsDataFgSizer = wx.FlexGridSizer( 1, 4, 0, 0 )
         _buttonsDataFgSizer.SetFlexibleDirection( wx.BOTH )
         _buttonsDataFgSizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 
         self._addGridChangesButton = wx.Button( self._openPanel, wx.ID_ANY, u"Update Column\n Names", wx.DefaultPosition, wx.DefaultSize, 0 )
         self._addGridChangesButton.Bind( wx.EVT_BUTTON, self._eventAddGridChanges )
-        self._addGridChangesButton.SetToolTip('This button update the columns names with the modification made on the grid element.')
+        self._addGridChangesButton.SetToolTip('This button updates the columns names with the modification made on the grid element.')
         _buttonsDataFgSizer.Add( self._addGridChangesButton, 0, wx.ALL, 5 )
 
         self._addGridUpdateButton = wx.Button( self._openPanel, wx.ID_ANY, u"Update Grid", wx.DefaultPosition, wx.DefaultSize, 0 )
         self._addGridUpdateButton.Bind( wx.EVT_BUTTON, self._eventUpdateGrid )
-        self._addGridUpdateButton.SetToolTip('This button update the data gris with the x and y axis plotted.')
+        self._addGridUpdateButton.SetToolTip('This button update the data grid with the x and y axis plotted.')
         _buttonsDataFgSizer.Add( self._addGridUpdateButton, 0, wx.ALL, 5 )
 
         self._addGridOriginalButton = wx.Button( self._openPanel, wx.ID_ANY, u"Original Array", wx.DefaultPosition, wx.DefaultSize, 0 )
         self._addGridOriginalButton.Bind( wx.EVT_BUTTON, self._eventOriginalGrid )
-        self._addGridOriginalButton.SetToolTip('This button load the original data on the data grid element.')
+        self._addGridOriginalButton.SetToolTip('This button loads the original data on the data grid element.')
         _buttonsDataFgSizer.Add( self._addGridOriginalButton, 0, wx.ALL, 5 )
+
+        self._addRemoveNansButton = wx.Button( self._openPanel, wx.ID_ANY, u"Remove NaNs", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self._addRemoveNansButton.Bind( wx.EVT_BUTTON, self._eventRemoveNans)
+        self._addRemoveNansButton.SetToolTip('This button removes any rows that contain NaN values from the data grid.')
+        _buttonsDataFgSizer.Add( self._addRemoveNansButton, 0, wx.ALL, 5 )
 
         _openButFgSizer.Add( _buttonsDataFgSizer, 0, wx.EXPAND, 5 )
 
@@ -3309,6 +3357,9 @@ class FrameDesign( wx.Frame ):
         event.Skip()
 
     def _eventOriginalGrid( self, event ):
+        event.Skip()
+
+    def _eventRemoveNans( self, event ):
         event.Skip()
 
     def _eventdeleteallmark( self, event ):
@@ -3465,6 +3516,12 @@ class FrameDesign( wx.Frame ):
         event.Skip()
 
     def _eventabout( self, event ):
+        event.Skip()
+
+    def _eventspectra( self, event ):
+        event.Skip()
+
+    def _eventLC( self, event ):
         event.Skip()
 
     def _eventmanual( self, event ):

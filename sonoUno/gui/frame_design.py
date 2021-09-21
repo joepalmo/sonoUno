@@ -2335,7 +2335,7 @@ class FrameDesign( wx.Frame ):
             parent = displaypanel, 
             id = wx.ID_ANY, 
             pos = wx.DefaultPosition, 
-            size = wx.Size(400,200),
+            size = wx.Size(500,350),
             style = wx.TAB_TRAVERSAL 
             )
         _matplotlibSizer = wx.FlexGridSizer(
@@ -2362,7 +2362,7 @@ class FrameDesign( wx.Frame ):
             parent = displaypanel,
             id = wx.ID_ANY,
             pos = wx.DefaultPosition,
-            size = wx.Size(400,200),
+            size = wx.Size(600,400),
             style = wx.HSCROLL | wx.VSCROLL | wx.TAB_TRAVERSAL
             )
         _plotSizer = wx.FlexGridSizer(

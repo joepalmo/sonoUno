@@ -30,6 +30,37 @@ from data_transform.predef_math_functions import PredefMathFunctions
 from pygame import mixer
 import time
 
+#change default plotting
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set(font="Franklin Gothic Book", 
+        rc={ "axes.axisbelow": False,
+        'axes.edgecolor': 'lightgrey',
+        'axes.facecolor': 'None',
+        'axes.grid': False,
+        'axes.labelcolor': 'dimgrey',
+        'axes.spines.right': False,
+        'axes.spines.top': False,
+        'figure.facecolor': 'white',
+        'lines.solid_capstyle': 'round',
+        'patch.edgecolor': 'w',
+        'patch.force_edgecolor': True,
+        'text.color': 'dimgrey',
+        'xtick.bottom': False,
+        'xtick.color': 'dimgrey',
+        'xtick.direction': 'out',
+        'xtick.top': False,
+        'ytick.color': 'dimgrey',
+        'ytick.direction': 'out',
+        'ytick.left': False,
+        'ytick.right': False})
+
+sns.despine(left=True, bottom=True)
+
+sns.set_context("notebook", rc={"font.size":14,
+                                "axes.titlesize":18,
+                                "axes.labelsize":16})
+
 class core (gui.FrameDesign):
     def __init__(self):
         #clase de la cual hereda
@@ -161,14 +192,16 @@ class core (gui.FrameDesign):
         #automatically set to discrete points
         self._setMarkerChar('o')
         #automatically set to better default color
-        self._setColorChar('darkturquoise')
+        self._setColorChar('#2cbdfe')
         self._set_soundwaveformlist()
         self._set_waveformnumber(1)
         self._swaveformlistbox.InsertItems(self._get_soundwaveformlist(), 0)
 
+        #Turn the grid on
+        self._gridChoice.SetValue(True)
         self._setGridColor("Black")
-        self._setGridLinestyle("Dashed line")
-        self._setGridLinewidth(0.5)
+        self._setGridLinestyle("Dotted line")
+        self._setGridLinewidth(0.1)
 
         self._setXLabel('')
         self._setYLabel('')
@@ -225,7 +258,7 @@ class core (gui.FrameDesign):
         self._norm_x = x
         self._norm_y = y
         #do normalization
-        self._norm_x, self._norm_y, status = self._matFc.normalize(x, y)
+        #self._norm_x, self._norm_y, status = self._matFc.normalize(x, y)
 
     def _setTimerIndex (self, index):
         self._expData.printoutput("Setting class variable timerIndex.")
@@ -826,7 +859,7 @@ class core (gui.FrameDesign):
             except Exception as e:
                 self._expData.writeexception(e)
             try:
-                self._dataSound.make_sound(self._getNormY(), timerIndex, inverse=self.inverseFunc)
+                self._dataSound.make_sound(self._getNormY(), self._getNormX(), timerIndex, inverse=self.inverseFunc)
             except Exception as e:
                 self._expData.writeexception(e)
             try:
@@ -858,7 +891,7 @@ class core (gui.FrameDesign):
         env = self.getenvelope()
         n_samples = np.arange(0.0, env.size)
         norm_x, norm_y, status = self._matFc.normalize(n_samples, env)
-        self._dataSound.make_sound(norm_y, timerIndex, inverse=self.inverseFunc)
+        self._dataSound.make_sound(norm_y, norm_x, timerIndex, inverse=self.inverseFunc)
         self._settimerenvelopeindex(timerIndex + 1)
         if timerIndex==(env.size-1):
             self._envelopeplaytogglebtn.SetLabel('Play envelope\nsound')

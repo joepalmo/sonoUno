@@ -35,22 +35,22 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(font="Franklin Gothic Book", 
         rc={ "axes.axisbelow": False,
-        'axes.edgecolor': 'lightgrey',
+        'axes.edgecolor': '#0c0c0c',
         'axes.facecolor': 'None',
         'axes.grid': False,
-        'axes.labelcolor': 'dimgrey',
+        'axes.labelcolor': '#0c0c0c',
         'axes.spines.right': False,
         'axes.spines.top': False,
         'figure.facecolor': 'white',
         'lines.solid_capstyle': 'round',
         'patch.edgecolor': 'w',
         'patch.force_edgecolor': True,
-        'text.color': 'dimgrey',
+        'text.color': '#0c0c0c',
         'xtick.bottom': False,
-        'xtick.color': 'dimgrey',
+        'xtick.color': '#0c0c0c',
         'xtick.direction': 'out',
         'xtick.top': False,
-        'ytick.color': 'dimgrey',
+        'ytick.color': '#0c0c0c',
         'ytick.direction': 'out',
         'ytick.left': False,
         'ytick.right': False})
@@ -705,12 +705,12 @@ class core (gui.FrameDesign):
             #self.panel.set_xlabel( self._axisChoiceX.GetString(self.getXLabel()) )
             #text=self.getXName()+'\n'+self.getYName()
             #wx.MessageBox(text, 'Info', wx.OK | wx.ICON_INFORMATION)
-            self.panel.set_xlabel( self.getXName() )
+            self.panel.set_xlabel( self._titleEdXaxisTextCtrl.GetValue() )
         except Exception as e:
             self._expData.writeexception(e)
         try:
             #self.panel.set_ylabel( self._axisChoiceX.GetString(self.getYLabel()) )
-            self.panel.set_ylabel( self.getYName() )
+            self.panel.set_ylabel( self._titleEdYaxisTextCtrl.GetValue()  )
         except Exception as e:
             self._expData.writeexception(e)
 
@@ -883,6 +883,7 @@ class core (gui.FrameDesign):
                     # Play a special sound at end here!
                     mixer.init() #you must initialize the mixer
                     alert=mixer.Sound('sound_module/sounds/alto_gong.wav')
+                    alert.set_volume(0.1)
                     alert.play()
                     self.stopMethod()
                 
@@ -1112,7 +1113,9 @@ class core (gui.FrameDesign):
             self._setXLabel(0)
             self._setYLabel(1)
             self._setXName(data.iloc[0,0])
+            self._titleEdXaxisTextCtrl.SetValue(self.getXName())
             self._setYName(data.iloc[0,1])
+            self._titleEdYaxisTextCtrl.SetValue(self.getYName())
             #text=self.getXName()+'\n'+self.getYName()
             #wx.MessageBox(text, 'Info', wx.OK | wx.ICON_INFORMATION)
             x = data.loc[1:,0]
@@ -1209,6 +1212,18 @@ class core (gui.FrameDesign):
     def titleEdData(self):
         #Fijarse si es aquí donde se pierden los labels
         self.panel.set_title(self._titleEdDataTextCtrl.GetValue())
+        self._figure.tight_layout()
+        self._figure.canvas.draw()
+
+    def titleEdXaxis(self):
+        #Fijarse si es aquí donde se pierden los labels
+        self.panel.set_xlabel(self._titleEdXaxisTextCtrl.GetValue())
+        self._figure.tight_layout()
+        self._figure.canvas.draw()
+
+    def titleEdYaxis(self):
+        #Fijarse si es aquí donde se pierden los labels
+        self.panel.set_ylabel(self._titleEdYaxisTextCtrl.GetValue())
         self._figure.tight_layout()
         self._figure.canvas.draw()
 
@@ -2292,7 +2307,7 @@ class core (gui.FrameDesign):
                     if status:
                         col_name_status = re.search('[^a-zA-Z0-9 \n\.]', data.iloc[0,i])
                         if not col_name_status==None:
-                            col_name = re.sub('[^a-zA-Z0-9 \n\.]', '', data.iloc[0,i])
+                            col_name = re.sub('[^a-zA-Z0-9 \n\.]', ' ', data.iloc[0,i])
                             msg = (
                                 'The name of the octave variable for column number '
                                 + str(i+1)
@@ -3099,6 +3114,14 @@ class core (gui.FrameDesign):
     def _eventTitleEdData( self, event ):
         self._expData.printoutput("Enter key pressed on the text box of data title.")
         self.titleEdData()
+
+    def _eventTitleEdXaxis( self, event ):
+        self._expData.printoutput("Enter key pressed on the text box of X-axis title.")
+        self.titleEdXaxis()
+    
+    def _eventTitleEdYaxis( self, event ):
+        self._expData.printoutput("Enter key pressed on the text box of Y-axis title.")
+        self.titleEdYaxis()
 
     def _eventdatagridpage(self, event):
         self._expData.printoutput("The display page of the grid was changed.")

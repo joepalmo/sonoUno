@@ -3103,12 +3103,13 @@ class FrameDesign( wx.Frame ):
         self._openPanel.SetScrollRate(5,5)
         self._openPanel.SetMinSize(wx.Size(350,200))
         _openButFgSizer = wx.FlexGridSizer( 
-            rows = 5, 
+            rows = 7, 
             cols = 1, 
             vgap = 0, 
             hgap = 0 
             )
         _openButFgSizer.SetFlexibleDirection(direction=wx.BOTH)
+
         # Create the sizer for data title.
         _titleDataFgSizer = wx.FlexGridSizer( 
             rows = 1, 
@@ -3165,6 +3166,124 @@ class FrameDesign( wx.Frame ):
             flag = wx.EXPAND, 
             border = 5 
             )
+
+
+        # Create the sizer for x axis title.
+        _titleXaxisFgSizer = wx.FlexGridSizer( 
+            rows = 1, 
+            cols = 2, 
+            vgap = 0, 
+            hgap = 0 
+            )
+        _titleXaxisFgSizer.AddGrowableCol(idx=1)
+        _titleXaxisFgSizer.SetFlexibleDirection(direction=wx.BOTH)
+        # Create data title label
+        self._titleXaxisTextCtrl = wx.TextCtrl( 
+            parent = self._openPanel, 
+            id = wx.ID_ANY, 
+            value = 'X-axis title:', 
+            pos = wx.DefaultPosition, 
+            size = wx.Size(70,15), 
+            style = wx.NO_BORDER|wx.TE_MULTILINE|wx.TE_NO_VSCROLL,
+            name = 'X-axis title label')
+        self._titleXaxisTextCtrl.SetEditable(0)
+        self._titleXaxisTextCtrl.SetToolTip(
+            'This is the label of the X-axis title element.'
+            )
+        _titleXaxisFgSizer.Add(
+            window = self._titleXaxisTextCtrl, 
+            proportion = 0, 
+            flag = wx.ALL, 
+            border = 5 
+            )
+        # Create the data title element
+        self._titleEdXaxisTextCtrl = wx.TextCtrl(
+            parent = self._openPanel, 
+            id = wx.ID_ANY, 
+            value = wx.EmptyString, 
+            pos = wx.DefaultPosition, 
+            size = wx.DefaultSize, 
+            style = wx.TE_PROCESS_ENTER, 
+            name = 'X-axis title element'
+            )
+        self._titleEdXaxisTextCtrl.SetToolTip('Here you can find the X-axis '
+            + 'title and change it if you want.')
+        self._titleEdXaxisTextCtrl.Bind(
+            event = wx.EVT_TEXT_ENTER, 
+            handler = self._eventTitleEdXaxis
+            )
+        _titleXaxisFgSizer.Add(
+            window = self._titleEdXaxisTextCtrl, 
+            proportion = 0, 
+            flag = wx.EXPAND|wx.ALL, 
+            border = 5 
+            )
+        _openButFgSizer.Add(
+            sizer = _titleXaxisFgSizer, 
+            proportion = 0, 
+            flag = wx.EXPAND, 
+            border = 5 
+            )
+
+        # Create the sizer for y axis title.
+        _titleYaxisFgSizer = wx.FlexGridSizer( 
+            rows = 1, 
+            cols = 2, 
+            vgap = 0, 
+            hgap = 0 
+            )
+        _titleYaxisFgSizer.AddGrowableCol(idx=1)
+        _titleYaxisFgSizer.SetFlexibleDirection(direction=wx.BOTH)
+        # Create y-axis title label
+        self._titleYaxisTextCtrl = wx.TextCtrl( 
+            parent = self._openPanel, 
+            id = wx.ID_ANY, 
+            value = 'Y-axis title:', 
+            pos = wx.DefaultPosition, 
+            size = wx.Size(70,15), 
+            style = wx.NO_BORDER|wx.TE_MULTILINE|wx.TE_NO_VSCROLL,
+            name = 'Y-axis title label')
+        self._titleYaxisTextCtrl.SetEditable(0)
+        self._titleYaxisTextCtrl.SetToolTip(
+            'This is the label of the Y-axis title element.'
+            )
+        _titleYaxisFgSizer.Add(
+            window = self._titleYaxisTextCtrl, 
+            proportion = 0, 
+            flag = wx.ALL, 
+            border = 5 
+            )
+        # Create the data title element
+        self._titleEdYaxisTextCtrl = wx.TextCtrl(
+            parent = self._openPanel, 
+            id = wx.ID_ANY, 
+            value = wx.EmptyString, 
+            pos = wx.DefaultPosition, 
+            size = wx.DefaultSize, 
+            style = wx.TE_PROCESS_ENTER, 
+            name = 'Y-axis title element'
+            )
+        self._titleEdYaxisTextCtrl.SetToolTip('Here you can find the Y-axis '
+            + 'title and change it if you want.')
+        self._titleEdYaxisTextCtrl.Bind(
+            event = wx.EVT_TEXT_ENTER, 
+            handler = self._eventTitleEdYaxis
+            )
+        _titleYaxisFgSizer.Add(
+            window = self._titleEdYaxisTextCtrl, 
+            proportion = 0, 
+            flag = wx.EXPAND|wx.ALL, 
+            border = 5 
+            )
+        _openButFgSizer.Add(
+            sizer = _titleYaxisFgSizer, 
+            proportion = 0, 
+            flag = wx.EXPAND, 
+            border = 5 
+            )
+
+
+
         # Create a sizer for the grid elements.
         _gridboxfgsizer = wx.FlexGridSizer( 
             rows = 1, 
@@ -3336,6 +3455,12 @@ class FrameDesign( wx.Frame ):
         event.Skip()
 
     def _eventTitleEdData( self, event ):
+        event.Skip()
+
+    def _eventTitleEdXaxis( self, event ):
+        event.Skip()
+
+    def _eventTitleEdYaxis( self, event ):
         event.Skip()
 
     def _eventAskLabelData( self, event ):

@@ -30,7 +30,8 @@ class reproductorRaw (object):
         self.max_volume = max_volume
         self.logscale = logscale
         self.duty_cycle = duty_cycle
-        self.waveform = self.get_available_waveforms()[0]
+        #self.waveform = self.get_available_waveforms()[0]
+        self.waveform = 'celesta'
 
         pygame.mixer.init(self.f_s, -16, channels = 1,buffer=1024)
 
@@ -172,7 +173,11 @@ class reproductorRaw (object):
         t1 = t0+self.get_time_base()
 
         if self.continuous:
-            f_int = freq #(f0*(t1-t)+f1*(t-t0))/(t1-t0)
+            #f_int = freq #(f0*(t1-t)+f1*(t-t0))/(t1-t0)
+            if self._last_freq == 0:
+                f_int = freq
+            else:
+                f_int = (f0*(t1-t)+f1*(t-t0))/(t1-t0)
         else:
             f_int = freq
 
@@ -199,7 +204,7 @@ class reproductorRaw (object):
                 (15, 0.0018)]
             return self._generate_tone(x, harmonics)
         if wf == 'celesta':
-            self.set_adsr(0.1, 0.1, 50, 0.2)
+            #self.set_adsr(0.1, 0.1, 50, 0.2)
             harmonics = [(1,0.316),(4,0.040)]
             return self._generate_tone(x, harmonics)
         if wf == 'pipe organ':
@@ -225,11 +230,12 @@ class reproductorRaw (object):
         return env
 
     #Es el método encargado de generar las notas y reproducirlas
-    def pitch (self, value, cont, inverse=False):
+    def pitch (self, value, xvalue, cont, inverse=False):
         if self.logscale:
             value = np.log10(100*value+1)/2 #This is to achieve reasoable values
             # FREQ AND VOLUME
             # also normalize the x-value - with max and min of wavelength scale
+            xvalue = np.log10(100*xvalue+1)/2
             #cont = np.log10(100*cont+1)/2
         if self.mapping == 'frequency':
             #where the frequency is set based on value
@@ -247,7 +253,10 @@ class reproductorRaw (object):
             vol = self.max_volume*value+self.min_volume
             #freq = self.fixed_freq
             # change frequency based on the X
-            freq = self.max_freq*cont+self.min_freq
+            inverse_x = (1-xvalue)
+            if inverse_x >0.99:
+                inverse_x = 0.99
+            freq = self.max_freq*(inverse_x)+self.min_freq
         self.env = self._adsr_envelope()
         f = self.env*vol*2**14*self.generate_waveform(freq)
         self.sound = pygame.mixer.Sound(f.astype('int16'))
@@ -262,13 +271,13 @@ class simpleSound(object):
         #Se instancia la clase que se genera el sonido usando PyGame.
         self.reproductor = reproductorRaw()
     #Éste método modifica el valor para producir la nota y lo envía a la clase reproductorMidi
-    def make_sound(self, data, x, inverse=False):
+    def make_sound(self, data, xdata, x, inverse=False):
         try:
             if not (x == -1):
                 #Aquí se llama al método que genera y envía la nota a fluidsynth
-                self.reproductor.pitch(data[x], x, inverse)
+                self.reproductor.pitch(data[x], xdata[x], x, inverse)
             else:
-                self.reproductor.pitch(0, 0, x, inverse)
+                self.reproductor.pitch(0, 0, 0, x, inverse)
         except Exception as e:
             self.expErrSs.writeexception(e)
         #En un futuro se puede pedir confirmación al método pitch y devolverla.

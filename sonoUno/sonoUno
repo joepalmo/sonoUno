@@ -736,6 +736,8 @@ class core (gui.FrameDesign):
                 lc = LineCollection(segments, cmap='rainbow', norm=norm)
                 lc.set_array(x)
                 self._lines = self.panel.add_collection(lc)
+                self.panel.set_xlim(3700, 7300)
+                self.panel.set_ylim(np.nanmin(y)-0.5*np.nanstd(y), np.nanmax(y)+0.5*np.nanstd(y))
                 #wavelength
                 self._lines = self.panel.plot(lc)
                 self._plotCounter = self._plotCounter + 1

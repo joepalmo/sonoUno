@@ -173,11 +173,11 @@ class reproductorRaw (object):
         t1 = t0+self.get_time_base()
 
         if self.continuous:
-            #f_int = freq #(f0*(t1-t)+f1*(t-t0))/(t1-t0)
-            if self._last_freq == 0:
-                f_int = freq
-            else:
-                f_int = (f0*(t1-t)+f1*(t-t0))/(t1-t0)
+            f_int = freq #(f0*(t1-t)+f1*(t-t0))/(t1-t0)
+            # if self._last_freq == freq:
+            #     f_int = freq
+            # else:
+            #     f_int = (f0*(t1-t)+f1*(t-t0))/(t1-t0)
         else:
             f_int = freq
 

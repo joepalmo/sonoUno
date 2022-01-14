@@ -30,6 +30,9 @@ from data_transform.predef_math_functions import PredefMathFunctions
 from pygame import mixer
 import time
 
+#import to save video
+from matplotlib.animation import FuncAnimation
+
 #change default plotting
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -171,8 +174,8 @@ class core (gui.FrameDesign):
         self._setYOctave(np.array(None))
         self._setTimerIndex(0)
         self._settimerenvelopeindex(0)
-        self._setVelocity(0)
-        self._soundVelSlider.SetValue(0)
+        self._setVelocity(50)
+        self._soundVelSlider.SetValue(50)
         self._askPoints = True
 
         array = np.array([0,1])
@@ -188,6 +191,7 @@ class core (gui.FrameDesign):
 
         #set default mode
         self._setMode('')
+        self._defaultmenuitem.Check(True)
 
         #automatically set to discrete points
         self._setMarkerChar('o')
@@ -736,7 +740,8 @@ class core (gui.FrameDesign):
                 lc = LineCollection(segments, cmap='rainbow', norm=norm)
                 lc.set_array(x)
                 self._lines = self.panel.add_collection(lc)
-                self.panel.set_xlim(3700, 7300)
+                #self.panel.set_xlim(3700, 7300)
+                self.panel.set_xlim(x.min(), x.max())
                 self.panel.set_ylim(np.nanmin(y)-0.5*np.nanstd(y), np.nanmax(y)+0.5*np.nanstd(y))
                 #wavelength
                 self._lines = self.panel.plot(lc)
@@ -1576,6 +1581,9 @@ class core (gui.FrameDesign):
                 self._expData.printoutput("The envelope sound is alredy on when the user press Play envelope.")
 
     def playMethod(self):
+
+        # self._dataSound.background_noise_start()
+
         if self.getXActual().any()==None:
             self._expData.writeinfo("The data has not been imported yet.")
             self._playButton.SetValue(False)
@@ -1612,6 +1620,9 @@ class core (gui.FrameDesign):
         self._playmenuitem.Check(False)
         self._playButton.SetLabel("Play")
         self._playmenuitem.SetItemLabel('Play' + '\t' + 'Alt+Shift+P')
+
+        #stop playing background noise
+        # self._dataSound.background_noise_stop()
 
         if self.getXActual().any()==None or self.getYActual().any()==None:
             self._expData.writeinfo("The data has not been imported yet.")
@@ -3059,7 +3070,23 @@ class core (gui.FrameDesign):
         message = "SonoUno is a Sonification Software for astronomical data in two column files. \n\nThis software is being developed by Bioing. Johanna Casado on her PhD tesis framework, under direction of Dr. Beatriz García. With general collaboration of Dr. Wanda Diaz Merced, and the collaboration on software development of Aldana Palma, Bioing. Julieta Carricondo Robino and Mg. Ing. Gonzalo A. de la Vega.\n\nThe email contact of the SonoUno team is: sonounoteam@gmail.com"
         wx.MessageBox(message, 'Information', wx.OK | wx.ICON_INFORMATION)
 
+    def _eventdefault(self, event):
+        if self._LCmenuitem.IsChecked():
+            self._LCmenuitem.Check(False)
+        if self._spectramenuitem.IsChecked():
+            self._spectramenuitem.Check(False)
+        self._setMode('')
+
+        # do not invert y-axis
+        self.inverseFunc = False
+
+        #replot things with new mode
+        self.replot2D(self.getXActual(), self.getYActual())
+        self._figure.canvas.draw()
+
     def _eventspectra(self, event):
+        if self._defaultmenuitem.IsChecked():
+            self._defaultmenuitem.Check(False)
         if self._LCmenuitem.IsChecked():
             self._LCmenuitem.Check(False)
         self._setMode('spectra')
@@ -3073,6 +3100,8 @@ class core (gui.FrameDesign):
     
     def _eventLC(self, event):
         #self._setMatSelection('Inverse')
+        if self._defaultmenuitem.IsChecked():
+            self._defaultmenuitem.Check(False)
         if self._spectramenuitem.IsChecked():
             self._spectramenuitem.Check(False)
         self._setMode('LC')

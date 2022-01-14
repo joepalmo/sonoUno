@@ -137,10 +137,14 @@ class reproductorRaw (object):
 
     def set_continuous(self):
         self.set_adsr(0.1,0.15,95,0.1)
+        self.min_freq = 500.0
+        self.max_freq = 3000.0
         self.continuous = True
 
     def set_discrete(self):
         self.set_adsr(0.01,0.15,25,0.5)
+        self.min_freq = 500.0
+        self.max_freq = 5000.0
         self.continuous = False
 
     def _generate_tone(self, x, harmonics):
@@ -261,6 +265,7 @@ class reproductorRaw (object):
         f = self.env*vol*2**14*self.generate_waveform(freq)
         self.sound = pygame.mixer.Sound(f.astype('int16'))
         self.sound.play()
+        #pygame.mixer.Channel(1).play(self.sound)
 
 
 #Esta clase es la que se comunica con la clase principal.
@@ -280,8 +285,18 @@ class simpleSound(object):
                 self.reproductor.pitch(0, 0, 0, x, inverse)
         except Exception as e:
             self.expErrSs.writeexception(e)
+    
         #En un futuro se puede pedir confirmación al método pitch y devolverla.
     #Aquí se genera el archivo de salida con el sonido, por el momento no depende del tempo seleccionado.
+
+    def background_noise_start(self, volume=0.07):
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        self.background_sound = pygame.mixer.Sound(os.path.join(base_path, 'sounds','celestialwhitenoise.wav'))
+        self.background_sound.set_volume(volume)
+        pygame.mixer.Channel(0).play(self.background_sound, loops = -1)
+
+    def background_noise_stop(self):
+        pygame.mixer.Channel(0).stop()
 
     def save_sound(self, path, data_x, data_y):
         #Se genera un objeto Track

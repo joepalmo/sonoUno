@@ -1128,6 +1128,23 @@ class FrameDesign( wx.Frame ):
 
         # Create Mode menu
         self._menumode = wx.Menu()
+
+        # create default menu item
+        self._defaultmenuitem = wx.MenuItem(
+            parentMenu = self._menumode,
+            id = wx.ID_ANY,
+            text = ('Default'),
+            helpString = ('Switch to default mode'),
+            kind = wx.ITEM_CHECK
+            )
+        # Append default menu item to mode menu
+        self._menumode.Append(self._defaultmenuitem,)
+        self.Bind(
+            event = wx.EVT_MENU,
+            handler = self._eventdefault,        #################CHANGE THIS EVENT
+            id = self._defaultmenuitem.GetId()
+            )    
+
         # create spectra menu item
         self._spectramenuitem = wx.MenuItem(
             parentMenu = self._menumode,
@@ -3641,6 +3658,9 @@ class FrameDesign( wx.Frame ):
         event.Skip()
 
     def _eventabout( self, event ):
+        event.Skip()
+
+    def _eventdefault( self, event ):
         event.Skip()
 
     def _eventspectra( self, event ):
